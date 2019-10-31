@@ -5,6 +5,7 @@ import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
+import { sortFiles } from './SortHelper'
 const os = window.require('os');
 
 export default class DirectoryTable extends React.Component {
@@ -13,20 +14,14 @@ export default class DirectoryTable extends React.Component {
     const { ipc, currentDirectory } = props
 
     let fyles = ipc.sendSync('request files from directory', currentDirectory || os.homedir());
-    // Here we want to sort the files so that directories are on top of files
-    fyles = fyles.sort((a, b) => {
-      if (a.type === 'Directory') {
-        return -1
-      } else {
-        return 1
-      }
-    })
+    // use SortHelper library to sort files
+    fyles = sortFiles(fyles)
     this.state = {
       files: fyles,
-      // condensed: true,
       currentDirectory: currentDirectory || os.homedir(),
     }
   }
+
   createData(name, type, size, statusChanged, lastModified, createdAt) {
     return { name, type, size, statusChanged, lastModified, createdAt}
   }
@@ -49,9 +44,12 @@ export default class DirectoryTable extends React.Component {
 
   changeDirectory(path) {
     const { ipc } = this.props
-    const { currentDirectory } = this.state
-    let fyles = ipc.sendSync('request files from directory', path);
-    console.log(fyles)
+    const { currentDirectory, previousDirectory, sortColumn, sortDirection } = this.state
+    path = path === previousDirectory ? path : `${currentDirectory}/${path}`
+    let fyles = ipc.sendSync('request files from directory', `${path}`);
+    // should keep sorting through changing directory, use state?
+    // use state when the user manually sorts
+    fyles = sortFiles(fyles, sortColumn, sortDirection)
     this.setState({
       currentDirectory: path,
       previousDirectory: currentDirectory,
@@ -59,10 +57,57 @@ export default class DirectoryTable extends React.Component {
     })
   }
 
+  renderTableHead(columns) {
+    return (
+      <TableHead>
+        <TableRow>
+          {columns.map(column => (
+            <TableCell
+              key={column.id}
+              align={column.align}
+              style={{ minWidth: column.minWidth }}
+            >
+              {column.label}
+            </TableCell>
+          ))}
+        </TableRow>
+      </TableHead>
+    )
+  }
+
+  renderTableBody(rows, columns) {
+    return (
+      <TableBody>
+        {rows.map(row => {
+          return (
+            <TableRow hover role="checkbox" tabIndex={-1} key={row.name} onClick={() => this.changeDirectory(`${row.name}`)}>
+              {columns.map(column => {
+                const value = row[column.id];
+                return (
+                  <TableCell key={column.id}>
+                    {value}
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          );
+        })}
+      </TableBody>
+    )
+  }
+
+  renderBackButton() {
+    const { previousDirectory } = this.state
+    return (
+      <button className="up-directory" onClick={() => this.changeDirectory(previousDirectory)}>
+      <i className="material-icons">
+        arrow_back
+      </i>
+    </button>
+    )
+  }
+
   render() {
-    console.log("props", this.props)
-    console.log("state", this.state)
-    // const { files } = this.props
     const { files } = this.state
     const { previousDirectory, currentDirectory } = this.state
     const classes = this.classes()
@@ -80,44 +125,13 @@ export default class DirectoryTable extends React.Component {
     return (
       <Paper>
         <div className="above-table">
-          <button className="up-directory" onClick={() => this.changeDirectory(previousDirectory)}>
-            <i className="material-icons">
-              arrow_back
-            </i>
-          </button>
+          { previousDirectory && this.renderBackButton() }
           <h3 style={{margin: 0}}>{currentDirectory}</h3>
         </div>
         <div className={classes.tableWrapper}>
           <Table stickyHeader aria-label="sticky table">
-            <TableHead>
-              <TableRow>
-                {columns.map(column => (
-                  <TableCell
-                    key={column.id}
-                    align={column.align}
-                    style={{ minWidth: column.minWidth }}
-                  >
-                    {column.label}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rows.map(row => {
-                return (
-                  <TableRow hover role="checkbox" tabIndex={-1} key={row.name} onClick={() => this.changeDirectory(`${currentDirectory}/${row.name}`)}>
-                    {columns.map(column => {
-                      const value = row[column.id];
-                      return (
-                        <TableCell key={column.id}>
-                          {value}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
+            { columns && this.renderTableHead(columns) }
+            { rows && columns && this.renderTableBody(rows, columns) }
           </Table>
         </div>
       </Paper>
