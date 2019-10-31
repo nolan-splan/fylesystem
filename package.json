@@ -2,16 +2,44 @@
   "name": "fylesystem",
   "version": "0.1.0",
   "private": true,
+  "author": {
+    "name": "Nolan Splan",
+    "email": "nolansplan@gmail.com",
+    "url": "https://github.com/nsplan"
+  },
+  "build": {
+    "appId": "com.my-website.my-app",
+    "productName": "Fylesystem",
+    "copyright": "Copyright © 2019 ${author}",
+    "mac": {
+      "category": "public.app-category.utilities"
+    },
+    "files": [
+      "build/**/*",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    }
+  },
   "dependencies": {
+    "@material-ui/core": "^4.5.1",
+    "electron-is-dev": "^1.1.0",
     "react": "^16.10.2",
     "react-dom": "^16.10.2",
     "react-scripts": "3.2.0"
   },
+  "homepage": "./",
+  "main": "public/electron.js",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start": "rescripts start",
+    "build": "rescripts build",
+    "test": "rescripts test",
+    "eject": "react-scripts eject",
+    "electron-dev": "concurrently \"SET BROWSER=none&&npm start\" \"wait-on http://localhost:3000 && electron .\"",
+    "postinstall": "electron-builder install-app-deps",
+    "preelectron-pack": "npm build",
+    "electron-pack": "npm run build -mw"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -27,5 +55,14 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@rescripts/cli": "0.0.12",
+    "@rescripts/rescript-env": "0.0.10",
+    "concurrently": "^5.0.0",
+    "electron": "^6.0.12",
+    "electron-builder": "^21.2.0",
+    "typescript": "^3.6.4",
+    "wait-on": "^3.3.0"
   }
 }

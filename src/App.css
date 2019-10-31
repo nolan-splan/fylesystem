@@ -1,4 +1,5 @@
 .App {
+  display: 'flex';
   text-align: center;
 }
 
@@ -6,9 +7,17 @@
   height: 40vmin;
 }
 
+.row {
+  border-top: '1px solid black';
+}
+
+body {
+  background: rgb(14, 185, 185);
+}
+
 .App-header {
   background-color: #282c34;
-  min-height: 100vh;
+  max-height: 10vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -19,4 +28,12 @@
 
 .App-link {
   color: #09d3ac;
+}
+
+.above-table {
+  height: 100%;
+}
+
+.up-directory {
+  float: left;
 }
