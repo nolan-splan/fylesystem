@@ -18,7 +18,9 @@ function getExpressionForColumn(column, direction, a, b) {
       return direction === 'asc' ? ascendingHelper(a, b) : descendingHelper(a, b)
 
     case 'type':
-      return direction === 'asc' ? (a.type === 'Directory') : (a.type !== 'Directory')
+      a = a.type.toLowerCase()
+      b = b.type.toLowerCase()
+      return direction === 'asc' ? ascendingHelper(a, b) : descendingHelper(a, b)
 
     case 'size':
       a = parseInt(a.sizeInBytes)

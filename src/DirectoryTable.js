@@ -12,13 +12,17 @@ export default class DirectoryTable extends React.Component {
   constructor(props) {
     super(props)
     const { ipc, currentDirectory } = props
-
+    const sortColumn = 'name'
+    const sortDirection = 'asc'
     let fyles = ipc.sendSync('request files from directory', currentDirectory || os.homedir());
     // use SortHelper library to sort files
-    fyles = sortFiles(fyles)
+    // sort by name ascending by default
+    fyles = sortFiles(fyles, sortColumn, sortDirection)
     this.state = {
       files: fyles,
       currentDirectory: currentDirectory || os.homedir(),
+      sortColumn: sortColumn,
+      sortDirection: sortDirection,
     }
   }
 
@@ -57,7 +61,17 @@ export default class DirectoryTable extends React.Component {
     })
   }
 
+  headerClicked(files, column, direction) {
+    files = sortFiles(files, column, direction)
+    this.setState({
+      files: files,
+      sortColumn: column,
+      sortDirection: direction
+    })
+  }
+
   renderTableHead(columns) {
+    const { files, sortDirection, sortColumn } = this.state
     return (
       <TableHead>
         <TableRow>
@@ -66,8 +80,10 @@ export default class DirectoryTable extends React.Component {
               key={column.id}
               align={column.align}
               style={{ minWidth: column.minWidth }}
+              onClick={ () => this.headerClicked(files, column.id, sortDirection === 'asc' ? 'desc' : 'asc') }
             >
               {column.label}
+              { sortColumn === column.id && (<i m={0} className="material-icons">{sortDirection === 'asc' ? 'arrow_drop_up' : 'arrow_drop_down'}</i>) }
             </TableCell>
           ))}
         </TableRow>
@@ -84,7 +100,7 @@ export default class DirectoryTable extends React.Component {
               {columns.map(column => {
                 const value = row[column.id];
                 return (
-                  <TableCell key={column.id}>
+                  <TableCell onContextMenu={() => console.log('Right Click')} key={column.id}>
                     {value}
                   </TableCell>
                 );
