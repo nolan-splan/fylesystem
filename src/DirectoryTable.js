@@ -7,6 +7,11 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import { sortFiles } from './SortHelper'
 const os = window.require('os');
+const fs = window.require('fs');
+// const cp = window.require('child_process');
+const path = window.require('path');
+const open = window.require('open');
+
 
 export default class DirectoryTable extends React.Component {
   constructor(props) {
@@ -46,16 +51,20 @@ export default class DirectoryTable extends React.Component {
     }
   }
 
-  changeDirectory(path) {
+  changeDirectory(filepath, up) {
     const { ipc } = this.props
-    const { currentDirectory, previousDirectory, sortColumn, sortDirection } = this.state
-    path = path === previousDirectory ? path : `${currentDirectory}/${path}`
-    let fyles = ipc.sendSync('request files from directory', `${path}`);
+    const { currentDirectory, sortColumn, sortDirection } = this.state
+    let newPath;
+    if (up) {
+      newPath = path.dirname(filepath).split(path.sep).join('/')
+    } else {
+      newPath = `${currentDirectory}/${filepath}`
+    }
+    let fyles = ipc.sendSync('request files from directory', `${newPath}`);
     // should keep sorting through changing directory, use state?
-    // use state when the user manually sorts
     fyles = sortFiles(fyles, sortColumn, sortDirection)
     this.setState({
-      currentDirectory: path,
+      currentDirectory: newPath,
       previousDirectory: currentDirectory,
       files: fyles,
     })
@@ -68,6 +77,21 @@ export default class DirectoryTable extends React.Component {
       sortColumn: column,
       sortDirection: direction
     })
+  }
+
+  handleRowClicked(row) {
+    if (row.type === 'Directory') {
+      this.changeDirectory(row.name);
+    } else if (row.type === 'File') {
+      this.openFile(row.name);
+    } else {
+      return null
+    }
+  }
+
+  openFile(filename) {
+    const { currentDirectory } = this.state
+    open(`${currentDirectory}/${filename}`)
   }
 
   renderTableHead(columns) {
@@ -96,12 +120,17 @@ export default class DirectoryTable extends React.Component {
       <TableBody>
         {rows.map(row => {
           return (
-            <TableRow hover role="checkbox" tabIndex={-1} key={row.name} onClick={() => this.changeDirectory(`${row.name}`)}>
+            <TableRow hover role="checkbox" tabIndex={-1} key={row.name} onClick={() => this.handleRowClicked(row)}>
               {columns.map(column => {
                 const value = row[column.id];
                 return (
                   <TableCell onContextMenu={() => console.log('Right Click')} key={column.id}>
                     {value}
+                    { column.label === 'Name' && row.type === 'File' && (
+                      <i style={{ float: 'right' }} className="material-icons" onClick={() => fs.open(row.name, 'w', (err, file) => console.log('opening file'))}>
+                        edit
+                      </i>
+                    )}
                   </TableCell>
                 );
               })}
@@ -113,9 +142,9 @@ export default class DirectoryTable extends React.Component {
   }
 
   renderBackButton() {
-    const { previousDirectory } = this.state
+    const { currentDirectory } = this.state
     return (
-      <button className="up-directory" onClick={() => this.changeDirectory(previousDirectory)}>
+      <button className="up-directory" onClick={() => this.changeDirectory(currentDirectory, true)}>
       <i className="material-icons">
         arrow_back
       </i>

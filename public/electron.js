@@ -6,10 +6,8 @@ const isDev = require('electron-is-dev');
 const fs = require('fs');
 const os = require('os');
 const ipc = electron.ipcMain;
-const { Menu, MenuItem } = require('electron')
-const menu = new Menu()
-
-
+const Menu = electron.Menu
+const MenuItem = electron.MenuItem
 
 // The client should initially request the home directory of the user's operating system.
 ipc.on('request files from directory', (event, path) => {
@@ -99,11 +97,17 @@ function getUserFiles() {
 
 app.on('ready', () => {
   createWindow()
-  menu.append(new MenuItem({
-    label: 'Print',
-    accelerator: 'CmdOrCtrl+P',
-    click: () => { console.log('printing!') }
+  const ctxMenu = new Menu()
+  ctxMenu.append(new MenuItem({
+    label: 'Open',
+    click: function() {
+      console.log()
+    }
   }))
+
+  mainWindow.webContents.on('context-menu', function(e, params){
+    ctxMenu.popup(mainWindow, params.x, params.y)
+  })
 });
 
 app.on('window-all-closed', () => {
